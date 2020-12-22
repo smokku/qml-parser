@@ -1,7 +1,12 @@
+#[macro_use]
+extern crate pest_derive;
+
+/// Type-erased errors.
+pub type BoxError = std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>;
+
+#[derive(Parser)]
+#[grammar = "qml.pest"]
+pub struct QMLParser;
+
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod tests;

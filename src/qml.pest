@@ -1,0 +1,38 @@
+qml = { SOI ~ EOI }
+
+/* simplified BNF from https://stackoverflow.com/questions/59303443/is-qml-grammar-lalr1
+
+qml ::= object
+
+object ::= type body
+body ::= '{' (property_definition|signal_definition|attribute_assignment|method_attribute)* '}'
+type ::= 'double'|'real'|identifier
+
+attribute_assignment ::= (attribute ':')? attribute_value ';'?
+item ::= list|object|string|boolean|number|identifier|value
+attribute_value ::= method_call|method_body|item|value+
+
+property_definition ::= 'default'? 'readonly'? 'property' ('alias'|'var'|type) property (':' attribute_value)?
+signal_definition ::= 'signal' signal ('(' (signal_parameter ',')* signal_parameter? ')')?
+signal_parameter ::= ('var'|type) parameter
+
+method_attribute ::= 'function' method '(' (parameter ',')* parameter? ')' method_body
+
+method_call ::= method '(' (argument ',')* argument? ')'
+
+method_body ::= '{' javascript '}'
+javascript ::= ('{' javascript '}'|'var'|'['|']'|'('|')'|','|':'|';'|string|identifier|number|value)*
+
+list ::= '[' item? (',' item)* ']'
+
+property ::= identifier
+attribute ::= identifier
+signal ::= identifier
+parameter ::= identifier
+method ::= identifier
+argument ::= string|boolean|number|identifier|value
+
+number ::= integer|float
+boolean ::= 'true'|'false'
+
+*/
