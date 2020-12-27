@@ -1,38 +1,56 @@
-qml = { SOI ~ EOI }
+WHITESPACE = _{ " " | "\t" | new_line }
+COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+new_line = @{ !"\\" ~ ( "\r"? ~ "\n" ) }
 
-/* simplified BNF from https://stackoverflow.com/questions/59303443/is-qml-grammar-lalr1
+// https://github.com/kropp/intellij-qml/blob/master/grammars/qml.bnf
 
-qml ::= object
+qml = { SOI ~ pragma? ~ import* ~ object ~ EOI }
 
-object ::= type body
-body ::= '{' (property_definition|signal_definition|attribute_assignment|method_attribute)* '}'
-type ::= 'double'|'real'|identifier
+pragma = { "pragma" ~ "Singleton" }
+import = { "import" ~ (module ~ version? | filename) ~ ("as" ~ qualifier)? }
+version = { float } // version_major "." version_minor actually
+module = { identifier }
+qualifier = { identifier }
+filename = { string }
 
-attribute_assignment ::= (attribute ':')? attribute_value ';'?
-item ::= list|object|string|boolean|number|identifier|value
-attribute_value ::= method_call|method_body|item|value+
+line_comment = _{ "//" ~ ( !new_line ~ ANY* ) }
+// block_comment = {}
 
-property_definition ::= 'default'? 'readonly'? 'property' ('alias'|'var'|type) property (':' attribute_value)?
-signal_definition ::= 'signal' signal ('(' (signal_parameter ',')* signal_parameter? ')')?
-signal_parameter ::= ('var'|type) parameter
+object = { type_name ~ body }
+body = { "{" ~ ( property_definition | signal_definition | attribute_assignment | method_attribute )* ~ "}" }
+type_name = { "double" | "real" | identifier }
 
-method_attribute ::= 'function' method '(' (parameter ',')* parameter? ')' method_body
+attribute_assignment = { (attribute ~ ":")? ~ attribute_value ~ ";"? }
+item = { list | object | string | boolean | number | identifier | value }
+attribute_value = { method_call | method_body | item | value+ }
 
-method_call ::= method '(' (argument ',')* argument? ')'
+property_definition = { "default"? ~ "readonly"? ~ "property" ~ ("alias" | "var" | type_name) ~ property ~ (":" ~ attribute_value)? }
+signal_definition = { "signal" ~ signal ~ ("(" ~ (signal_parameter ~ ",")* ~ signal_parameter? ~ ")")? }
+signal_parameter = { ("var" | type_name) ~ parameter }
 
-method_body ::= '{' javascript '}'
-javascript ::= ('{' javascript '}'|'var'|'['|']'|'('|')'|','|':'|';'|string|identifier|number|value)*
+method_attribute = { "function" ~ method ~ "(" ~ (parameter ~ ",")* ~ parameter? ~ ")" ~ method_body }
 
-list ::= '[' item? (',' item)* ']'
+method_call = { method ~ "(" ~ (argument ~ ",")* ~ argument? ~ ")" }
 
-property ::= identifier
-attribute ::= identifier
-signal ::= identifier
-parameter ::= identifier
-method ::= identifier
-argument ::= string|boolean|number|identifier|value
+method_body = { "{" ~ javascript ~ "}" }
+javascript = { ("{" ~ javascript ~ "}" | "var" | "[" | "]" | "(" | ")" | "," | ":" | ";" | string | identifier | number | value)* }
 
-number ::= integer|float
-boolean ::= 'true'|'false'
+list = { "[" ~ item? ~ ("," ~ item)* ~ "]" }
 
-*/
+property = { identifier }
+attribute = { identifier }
+signal = { identifier }
+parameter = { identifier }
+method = { identifier }
+argument = { string | boolean | number | identifier | value }
+
+number = { integer | float }
+boolean = { "true" | "false" }
+
+// ---
+string = ${ "\"" ~ string_content ~ "\"" }
+string_content = @{ !"\"" ~ ALPHABETIC* }
+integer = @{ ASCII_DIGIT+ }
+float = ${ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+identifier = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+value = { string | number }
