@@ -1,9 +1,2 @@
-[package]
-name = "bevy_qml"
-version = "0.1.0"
-authors = ["Tomasz Sterna <tomek@sterna.link>"]
-edition = "2018"
-
-[dependencies]
-pest = "2.1"
-pest_derive = "2.1"
+[workspace]
+members = ["qml-parser", "bevy_qml"]

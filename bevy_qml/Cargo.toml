@@ -1,0 +1,9 @@
+[package]
+name = "bevy_qml"
+version = "0.1.0"
+authors = ["Tomasz Sterna <tomek@sterna.link>"]
+edition = "2018"
+
+[dependencies]
+bevy = { version = "0.4", default-features = false }
+qml-parser = { version = "0.1", path = "../qml-parser" }
