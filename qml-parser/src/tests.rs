@@ -3,7 +3,7 @@ use pest::{error, Parser};
 
 #[test]
 fn identifier() -> Result<(), error::Error<Rule>> {
-    let mut pair = QMLParser::parse(Rule::identifier, "Object")?;
+    let mut pair = QMLPest::parse(Rule::identifier, "Object")?;
     let pair = pair.next().unwrap();
     assert_eq!(pair.as_str(), "Object");
     Ok(())
@@ -11,7 +11,7 @@ fn identifier() -> Result<(), error::Error<Rule>> {
 
 #[test]
 fn object() -> Result<(), error::Error<Rule>> {
-    let mut pair = QMLParser::parse(Rule::object, "Object {}")?;
+    let mut pair = QMLPest::parse(Rule::object, "Object {}")?;
 
     let mut pairs = pair.next().unwrap().into_inner();
     let pair = pairs.next().unwrap();
@@ -24,10 +24,10 @@ fn object() -> Result<(), error::Error<Rule>> {
 
 #[test]
 fn body() -> Result<(), error::Error<Rule>> {
-    QMLParser::parse(Rule::body, "{}")?;
-    QMLParser::parse(Rule::body, "{property: 7}")?;
-    QMLParser::parse(Rule::body, "{\tproperty:    7;}")?;
-    QMLParser::parse(Rule::body, "{property1:7;property2:\"abc\"}")?;
-    QMLParser::parse(Rule::body, "{\n  property1: 7\n  property2: 8\n}")?;
+    QMLPest::parse(Rule::body, "{}")?;
+    QMLPest::parse(Rule::body, "{property: 7}")?;
+    QMLPest::parse(Rule::body, "{\tproperty:    7;}")?;
+    QMLPest::parse(Rule::body, "{property1:7;property2:\"abc\"}")?;
+    QMLPest::parse(Rule::body, "{\n  property1: 7\n  property2: 8\n}")?;
     Ok(())
 }
