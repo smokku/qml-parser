@@ -1,14 +1,28 @@
+use bevy_reflect::DynamicStruct;
 use qml_parser::{Generator, QMLParser};
 use std::fs;
 
 pub type BoxError = std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct UiGenerator {
     created: bool,
+    dynamic_struct: DynamicStruct,
 }
 
 impl Generator for UiGenerator {
+    fn insert_integer(&mut self, attribute: &str, value: i32) {
+        self.dynamic_struct.insert(attribute, value);
+    }
+
+    fn insert_float(&mut self, attribute: &str, value: f32) {
+        self.dynamic_struct.insert(attribute, value);
+    }
+
+    fn insert_string(&mut self, attribute: &str, value: String) {
+        self.dynamic_struct.insert(attribute, value);
+    }
+
     fn done(&mut self) {
         self.created = true;
         println!("Done");

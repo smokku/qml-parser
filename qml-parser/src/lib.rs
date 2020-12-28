@@ -14,28 +14,26 @@ mod tests;
 
 pub type GeneratorFn = dyn Fn(&str) -> Option<Box<dyn Generator>>;
 
+#[derive(Default)]
 pub struct QMLParser {
     imports: HashMap<String, HashMap<String, Box<GeneratorFn>>>,
     in_scope: Vec<Box<GeneratorFn>>,
 }
 
-pub trait Generator: Drop + Debug {
+pub trait Generator: Drop {
+    fn insert_string(&mut self, attribute: &str, value: String);
+    fn insert_integer(&mut self, attribute: &str, value: i32);
+    fn insert_float(&mut self, attribute: &str, value: f32);
     fn done(&mut self);
 }
 
 impl QMLParser {
     pub fn new() -> Self {
-        QMLParser {
-            imports: HashMap::new(),
-            in_scope: Vec::new(),
-        }
+        QMLParser::default()
     }
 
     pub fn register_import<S: Into<String>>(&mut self, name: S, version: S, gen: Box<GeneratorFn>) {
-        let import = self
-            .imports
-            .entry(name.into())
-            .or_insert_with(|| HashMap::new());
+        let import = self.imports.entry(name.into()).or_insert_with(HashMap::new);
         import.insert(version.into(), gen);
     }
 
@@ -92,10 +90,65 @@ impl QMLParser {
     fn process_object(&mut self, pair: Pair<Rule>) -> Result<(), error::Error<Rule>> {
         let mut pairs = pair.into_inner();
         let type_name = pairs.next().unwrap();
-        let _body = pairs.next().unwrap();
+        let body = pairs.next().unwrap();
 
-        if let Some(generator) = self.in_scope.iter().find_map(|gen| gen(type_name.as_str())) {
-            println!("{:?}", generator);
+        if let Some(mut generator) = self.in_scope.iter().find_map(|gen| gen(type_name.as_str())) {
+            for pair in body.into_inner() {
+                match pair.as_rule() {
+                    Rule::attribute_assignment => {
+                        let mut pairs = pair.into_inner();
+                        let attribute = pairs.next().unwrap();
+                        let value = pairs.next().unwrap();
+                        println!("{}, {:?}", attribute.as_str(), value);
+                        match value.as_rule() {
+                            Rule::integer => {
+                                generator.insert_integer(
+                                    attribute.as_str(),
+                                    value.as_str().parse().unwrap(),
+                                );
+                            }
+                            Rule::float => {
+                                generator.insert_float(
+                                    attribute.as_str(),
+                                    value.as_str().parse().unwrap(),
+                                );
+                            }
+                            Rule::string => {
+                                generator.insert_string(attribute.as_str(), value.to_string());
+                            }
+                            Rule::method_call
+                            | Rule::method_body
+                            | Rule::list
+                            | Rule::object
+                            | Rule::boolean
+                            | Rule::identifier => {
+                                return Err(error::Error::new_from_span(
+                                    error::ErrorVariant::<Rule>::CustomError {
+                                        message: "Not supported".to_string(),
+                                    },
+                                    value.as_span(),
+                                ))
+                            }
+                            _ => {
+                                unreachable!(value.as_str())
+                            }
+                        }
+                    }
+                    Rule::property_definition
+                    | Rule::signal_definition
+                    | Rule::method_attribute => {
+                        return Err(error::Error::new_from_span(
+                            error::ErrorVariant::<Rule>::CustomError {
+                                message: "Not supported".to_string(),
+                            },
+                            pair.as_span(),
+                        ))
+                    }
+                    _ => {
+                        unreachable!(pair.as_str())
+                    }
+                }
+            }
             Ok(())
         } else {
             Err(error::Error::new_from_span(
