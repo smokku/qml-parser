@@ -122,11 +122,11 @@ impl QMLParser {
                             | Rule::object
                             | Rule::boolean
                             | Rule::identifier => {
-                                return Err(error::Error::new_from_span(
+                                return Err(error::Error::new_from_pos(
                                     error::ErrorVariant::<Rule>::CustomError {
                                         message: "Not supported".to_string(),
                                     },
-                                    value.as_span(),
+                                    value.as_span().start_pos(),
                                 ))
                             }
                             _ => {
@@ -137,11 +137,11 @@ impl QMLParser {
                     Rule::property_definition
                     | Rule::signal_definition
                     | Rule::method_attribute => {
-                        return Err(error::Error::new_from_span(
+                        return Err(error::Error::new_from_pos(
                             error::ErrorVariant::<Rule>::CustomError {
                                 message: "Not supported".to_string(),
                             },
-                            pair.as_span(),
+                            pair.as_span().start_pos(),
                         ))
                     }
                     _ => {

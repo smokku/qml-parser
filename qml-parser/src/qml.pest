@@ -57,5 +57,5 @@ char = {
 }
 integer = @{ ( "+" | "-" )? ~ ASCII_DIGIT+ }
 float = ${ integer ~ ( ( "." ~ ASCII_DIGIT+ ) | ( ^"e" ~ integer ) ) }
-identifier = @{ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+identifier = @{ ASCII_ALPHA ~ ( ASCII_ALPHANUMERIC | "_" )* }
 value = _{ string | number }

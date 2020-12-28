@@ -1,11 +1,17 @@
+use bevy_ecs::Commands;
 use bevy_reflect::DynamicStruct;
 use qml_parser::{Generator, QMLParser};
-use std::fs;
 
-pub type BoxError = std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>;
+pub fn register_ui_import(parser: &mut QMLParser, _commands: &mut Commands) {
+    parser.register_import(
+        "BevyUi",
+        "0.4",
+        Box::new(|_name: &str| Some(Box::new(UiGenerator::default()))),
+    );
+}
 
 #[derive(Default)]
-struct UiGenerator {
+pub struct UiGenerator {
     created: bool,
     dynamic_struct: DynamicStruct,
 }
@@ -35,18 +41,4 @@ impl Drop for UiGenerator {
             self.done();
         }
     }
-}
-
-fn main() -> std::result::Result<(), BoxError> {
-    let file = fs::read_to_string("bevy_qml/res/basic.qml")?;
-
-    let mut parser = QMLParser::new();
-    parser.register_import(
-        "BevyUi",
-        "0.4",
-        Box::new(|_name: &str| Some(Box::new(UiGenerator::default()))),
-    );
-    parser.process(file.as_str())?;
-
-    Ok(())
 }
