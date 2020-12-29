@@ -1,6 +1,6 @@
-WHITESPACE = _{ " " | "\t" | new_line }
-COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
-new_line = @{ !"\\" ~ ( "\r"? ~ "\n" ) }
+WHITESPACE = _{ " " | "\t" | !"\\" ~ new_line }
+COMMENT = _{ block_comment | line_comment }
+new_line = @{ "\r"? ~ "\n" }
 
 // https://github.com/kropp/intellij-qml/blob/master/grammars/qml.bnf
 
@@ -13,8 +13,8 @@ module = { identifier }
 qualifier = { identifier }
 filename = { string }
 
-line_comment = _{ "//" ~ ( !new_line ~ ANY* ) }
-// block_comment = {}
+line_comment = @{ "//" ~ ( !new_line ~ ANY )* }
+block_comment = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
 object = { type_name ~ body }
 body = { "{" ~ ( property_definition | signal_definition | attribute_assignment | method_attribute )* ~ "}" }

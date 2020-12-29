@@ -1,5 +1,5 @@
 use super::*;
-use pest::{error, Parser};
+use pest::*;
 
 #[test]
 fn identifier() -> Result<(), error::Error<Rule>> {
@@ -23,26 +23,36 @@ fn object() -> Result<(), error::Error<Rule>> {
 
 #[test]
 fn body() -> Result<(), error::Error<Rule>> {
-    let mut pair = QMLPest::parse(Rule::body, "{}")?;
-    assert_eq!(pair.next().unwrap().as_str(), "{}");
-    let mut pair = QMLPest::parse(Rule::body, "{property: 7}")?;
-    assert_eq!(pair.next().unwrap().as_str(), "{property: 7}");
-    let mut pair = QMLPest::parse(Rule::body, "{property: 0.7}")?;
-    assert_eq!(pair.next().unwrap().as_str(), "{property: 0.7}");
-    let mut pair = QMLPest::parse(Rule::body, "{property: \"aaa\"}")?;
-    assert_eq!(pair.next().unwrap().as_str(), "{property: \"aaa\"}");
-    let mut pair = QMLPest::parse(Rule::body, "{\tproperty:    7;}")?;
-    assert_eq!(pair.next().unwrap().as_str(), "{\tproperty:    7;}");
-    let mut pair = QMLPest::parse(Rule::body, "{property1:7;property2:\"abc\"}")?;
-    assert_eq!(
-        pair.next().unwrap().as_str(),
-        "{property1:7;property2:\"abc\"}"
-    );
-    let mut pair = QMLPest::parse(Rule::body, "{\n  property1: 7\n  property2: 8\n}")?;
-    assert_eq!(
-        pair.next().unwrap().as_str(),
-        "{\n  property1: 7\n  property2: 8\n}"
-    );
+    for body in vec![
+        "{}",
+        "{identifier}",
+        "{property: 7}",
+        "{property: 0.7}",
+        "{property: \"aaa\"}",
+        "{\tproperty:    7;}",
+        "{property1:7;property2:\"abc\"}",
+        "{\n  property1: 7\n  property2: 8\n}",
+        "{\nproperty: 1 // comment\n}",
+        "{\nabc // comment\n}",
+    ] {
+        let mut pair = QMLPest::parse(Rule::body, body)?;
+        assert_eq!(pair.next().unwrap().as_str(), body);
+    }
+
+    // check whether comment is removed
+    parses_to! {
+        parser: QMLPest,
+        input:  "{\nabc // comment\n}",
+        rule:   Rule::body,
+        tokens: [
+            body(0, 18, [
+                attribute_assignment(2, 17, [
+                    identifier(2, 5)
+                ]),
+            ]),
+        ]
+    };
+
     Ok(())
 }
 
@@ -133,5 +143,16 @@ fn attribute_assignment() -> Result<(), error::Error<Rule>> {
     assert_eq!(pair.next().unwrap().as_str(), "property: 1.1;");
     let mut pair = QMLPest::parse(Rule::attribute_assignment, "property: \"abcdef\";")?;
     assert_eq!(pair.next().unwrap().as_str(), "property: \"abcdef\";");
+    Ok(())
+}
+
+#[test]
+fn line_comment() -> Result<(), error::Error<Rule>> {
+    let mut pair = QMLPest::parse(Rule::line_comment, "//comment")?;
+    assert_eq!(pair.next().unwrap().as_str(), "//comment");
+    let mut pair = QMLPest::parse(Rule::line_comment, "// some comment")?;
+    assert_eq!(pair.next().unwrap().as_str(), "// some comment");
+    let mut pair = QMLPest::parse(Rule::line_comment, "// comment  \nsomething")?;
+    assert_eq!(pair.next().unwrap().as_str(), "// comment  ");
     Ok(())
 }
