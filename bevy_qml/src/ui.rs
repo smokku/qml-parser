@@ -6,7 +6,11 @@ pub fn register_ui_import(parser: &mut QMLParser, _commands: &mut Commands) {
     parser.register_import(
         "BevyUi",
         "0.4",
-        Box::new(|_name: &str| Some(Box::new(UiGenerator::default()))),
+        Box::new(|name: &str| {
+            let generator = UiGenerator::default();
+
+            Some(Box::new(generator))
+        }),
     );
 }
 
