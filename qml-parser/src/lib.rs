@@ -2,6 +2,7 @@
 extern crate pest_derive;
 
 use pest::{error, iterators::Pair, Parser};
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
@@ -12,15 +13,14 @@ struct QMLPest;
 #[cfg(test)]
 mod tests;
 
-pub type GeneratorFn = dyn Fn(&str) -> Option<Box<dyn Generator>>;
-
 #[derive(Default)]
 pub struct QMLParser {
-    imports: HashMap<String, HashMap<String, Box<GeneratorFn>>>,
-    in_scope: Vec<Box<GeneratorFn>>,
+    imports: HashMap<String, HashMap<String, Box<Cell<dyn Generator>>>>,
+    in_scope: Vec<Box<Cell<dyn Generator>>>,
 }
 
 pub trait Generator: Drop {
+    fn create(&mut self, name: &str) -> Option<Box<Cell<dyn Generator>>>;
     fn insert_string(&mut self, attribute: &str, value: String);
     fn insert_integer(&mut self, attribute: &str, value: i32);
     fn insert_float(&mut self, attribute: &str, value: f32);
@@ -32,7 +32,12 @@ impl QMLParser {
         QMLParser::default()
     }
 
-    pub fn register_import<S: Into<String>>(&mut self, name: S, version: S, gen: Box<GeneratorFn>) {
+    pub fn register_import<S: Into<String>>(
+        &mut self,
+        name: S,
+        version: S,
+        gen: Box<Cell<dyn Generator>>,
+    ) {
         let import = self.imports.entry(name.into()).or_insert_with(HashMap::new);
         import.insert(version.into(), gen);
     }
@@ -92,7 +97,11 @@ impl QMLParser {
         let type_name = pairs.next().unwrap();
         let body = pairs.next().unwrap();
 
-        if let Some(mut generator) = self.in_scope.iter().find_map(|gen| gen(type_name.as_str())) {
+        if let Some(mut generator) = self
+            .in_scope
+            .iter_mut()
+            .find_map(|gen| gen.get_mut().create(type_name.as_str()))
+        {
             for pair in body.into_inner() {
                 match pair.as_rule() {
                     Rule::attribute_assignment => {
@@ -102,19 +111,21 @@ impl QMLParser {
                         println!("{}, {:?}", attribute.as_str(), value);
                         match value.as_rule() {
                             Rule::integer => {
-                                generator.insert_integer(
+                                generator.get_mut().insert_integer(
                                     attribute.as_str(),
                                     value.as_str().parse().unwrap(),
                                 );
                             }
                             Rule::float => {
-                                generator.insert_float(
+                                generator.get_mut().insert_float(
                                     attribute.as_str(),
                                     value.as_str().parse().unwrap(),
                                 );
                             }
                             Rule::string => {
-                                generator.insert_string(attribute.as_str(), value.to_string());
+                                generator
+                                    .get_mut()
+                                    .insert_string(attribute.as_str(), value.to_string());
                             }
                             Rule::method_call
                             | Rule::method_body

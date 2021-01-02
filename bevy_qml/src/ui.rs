@@ -1,48 +1,56 @@
 use bevy_ecs::Commands;
 use bevy_reflect::DynamicStruct;
-use qml_parser::{Generator, QMLParser};
+use qml_parser::QMLParser;
+use std::cell::Cell;
 
-pub fn register_ui_import(parser: &mut QMLParser, _commands: &mut Commands) {
-    parser.register_import(
-        "BevyUi",
-        "0.4",
-        Box::new(|name: &str| {
-            let generator = UiGenerator::default();
-
-            Some(Box::new(generator))
-        }),
-    );
+pub fn register_ui_import<'a>(_parser: &mut QMLParser, commands: &'a mut Commands) {
+    let _gen = Box::new(Cell::new(UiGenerator::new(commands)));
+    // parser.register_import("BevyUi", "0.4", gen);
 }
 
-#[derive(Default)]
-pub struct UiGenerator {
+pub struct UiGenerator<'a> {
     created: bool,
-    dynamic_struct: DynamicStruct,
+    _dynamic_struct: DynamicStruct,
+    _commands: &'a mut Commands,
 }
 
-impl Generator for UiGenerator {
-    fn insert_integer(&mut self, attribute: &str, value: i32) {
-        self.dynamic_struct.insert(attribute, value);
-    }
-
-    fn insert_float(&mut self, attribute: &str, value: f32) {
-        self.dynamic_struct.insert(attribute, value);
-    }
-
-    fn insert_string(&mut self, attribute: &str, value: String) {
-        self.dynamic_struct.insert(attribute, value);
-    }
-
-    fn done(&mut self) {
-        self.created = true;
-        println!("Done");
+impl<'a> UiGenerator<'a> {
+    pub fn new(commands: &'a mut Commands) -> Self {
+        Self {
+            created: false,
+            _dynamic_struct: DynamicStruct::default(),
+            _commands: commands,
+        }
     }
 }
 
-impl Drop for UiGenerator {
+// impl Generator for UiGenerator<'_> {
+//     fn create(&mut self, name: &str) -> Option<Box<dyn Generator>> {
+//         Some(Box::new(Self::new(self.commands)))
+//     }
+
+//     fn insert_integer(&mut self, attribute: &str, value: i32) {
+//         self.dynamic_struct.insert(attribute, value);
+//     }
+
+//     fn insert_float(&mut self, attribute: &str, value: f32) {
+//         self.dynamic_struct.insert(attribute, value);
+//     }
+
+//     fn insert_string(&mut self, attribute: &str, value: String) {
+//         self.dynamic_struct.insert(attribute, value);
+//     }
+
+//     fn done(&mut self) {
+//         self.created = true;
+//         println!("Done");
+//     }
+// }
+
+impl Drop for UiGenerator<'_> {
     fn drop(&mut self) {
         if !self.created {
-            self.done();
+            // self.done();
         }
     }
 }
